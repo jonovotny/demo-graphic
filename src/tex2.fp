@@ -17,7 +17,10 @@ varying vec4 lightPositionCS;
 // Values that stay constant for the whole mesh.
 uniform vec4 lightPositionWS[NUM_LIGHTS];
 uniform vec4 lightColor[NUM_LIGHTS];
-uniform vec4 lightCoefficients[NUM_LIGHTS];
+uniform float lightAmbientI[NUM_LIGHTS];
+uniform float lightDiffuseI[NUM_LIGHTS];
+uniform float lightSpecularI[NUM_LIGHTS];
+uniform float camMounted[NUM_LIGHTS];
 
 // Material properties
 uniform vec3 colorAmbient;
@@ -43,7 +46,7 @@ uniform sampler2D texOpacity;
 void main() {
   vec4 matColorAmbient = vec4(colorAmbient, 1.0);
   vec4 matColorDiffuse = vec4(colorDiffuse, 1.0);
-  vec4 matColorSpecular = vec4(colorDiffuse, 1.0);
+  vec4 matColorSpecular = vec4(colorSpecular, 1.0);
   float matSpecularExp = specularExp;
   float matOpacity = opacity;
 
@@ -89,7 +92,7 @@ void main() {
   for (int i = 0; i < NUM_LIGHTS; i++) {
 
     // Ambient : simulates indirect lighting
-    vec4 ambient = lightCoefficients[i].r * lightColor[i] * matColorAmbient;
+    vec4 ambient = lightAmbientI[i] * lightColor[i] * matColorAmbient;
     
     // Distance to the light
     float distanceToLight = length(lightPositionWS[i] - positionWS);
@@ -102,7 +105,7 @@ void main() {
     float cosAngleFromNormal = max(0.0, dot(normalCS, lightDirectionCS[i]));
 
     // Diffuse : "color" of the object
-    vec4 diffuse = lightCoefficients[i].g * lightColor[i] * cosAngleFromNormal * matColorDiffuse;
+    vec4 diffuse = lightDiffuseI[i] * lightColor[i] * cosAngleFromNormal * matColorDiffuse;
     
     // Direction in which the triangle reflects the light
     vec4 reflectDir = reflect(-lightDirectionCS[i], normalCS);
@@ -116,7 +119,7 @@ void main() {
     vec4 specular = lightColor[i] * pow(cosAlpha, matSpecularExp) * matColorSpecular;
     float attenuation = 1.0 / (1.0 + 0.01 * pow(distanceToLight, 2));
 
-    outputColor += ambient + attenuation * (diffuse + 0.0 * lightCoefficients[i].b * specular);
+    outputColor += ambient + attenuation * (diffuse + lightSpecularI[i] * specular);
 
   }
   

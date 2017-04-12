@@ -30,8 +30,14 @@ void lightList::load(const GLint programID) {
                                               _lightPositions.name.c_str());
     _lightColors.ID = glGetUniformLocation(programID,
                                            _lightColors.name.c_str());
-    _lightCoefficients.ID = glGetUniformLocation(programID,
-                                           _lightCoefficients.name.c_str());
+    _lightAmbientIs.ID = glGetUniformLocation(programID,
+                                           _lightAmbientIs.name.c_str());
+    _lightDiffuseIs.ID = glGetUniformLocation(programID,
+                                           _lightDiffuseIs.name.c_str());
+    _lightSpecularIs.ID = glGetUniformLocation(programID,
+                                           _lightSpecularIs.name.c_str());
+    _lightCamFlags.ID = glGetUniformLocation(programID,
+                                           _lightCamFlags.name.c_str());
   }
 }
 
@@ -48,9 +54,18 @@ void lightList::draw() {
                  _lightColors.size(),
                  &_lightColors.getData()[0].x);
 
-    glUniform4fv(_lightCoefficients.ID,
-                 _lightCoefficients.getData().size(),
-                 &_lightCoefficients.getData()[0].x);
+    glUniform1fv(_lightAmbientIs.ID,
+                 _lightAmbientIs.getData().size(),
+                 &_lightAmbientIs.getData()[0]);
+    glUniform1fv(_lightDiffuseIs.ID,
+                 _lightDiffuseIs.getData().size(),
+                 &_lightDiffuseIs.getData()[0]);
+    glUniform1fv(_lightSpecularIs.ID,
+                 _lightSpecularIs.getData().size(),
+                 &_lightSpecularIs.getData()[0]);
+    glUniform1iv(_lightCamFlags.ID,
+                 _lightCamFlags.getData().size(),
+                 &_lightCamFlags.getData()[0]);
   }
 }
 

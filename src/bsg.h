@@ -325,8 +325,12 @@ class lightList {
   drawableObjData<glm::vec4> _lightPositions;
   /// The colors of the lights in the list.
   drawableObjData<glm::vec4> _lightColors;
-  /// The ambient, diffuse and specular coefficients of the lights in the list.
-  drawableObjData<glm::vec4> _lightCoefficients;
+  /// The ambient, diffuse and specular intensities of the lights in the list.
+  drawableObjData<float> _lightAmbientIs;
+  drawableObjData<float> _lightDiffuseIs;
+  drawableObjData<float> _lightSpecularIs;
+  /// Identifies if a light is positioned in relation to the camera
+  drawableObjData<int> _lightCamFlags;
 
   /// The default names of things in the shaders, put here for easy
   /// comparison or editing.  If you're mucking around with the
@@ -334,7 +338,7 @@ class lightList {
   /// shader, and that the size of the arrays is set with 'XX', see
   /// the shader constructors below.
   void _setupDefaultNames() {
-    setNames("lightPositionWS", "lightColor", "lightCoefficients");
+    setNames("lightPositionWS", "lightColor", "lightAmbientI", "lightDiffuseI", "lightSpecularI", "lightCamMounted");
   }
 
  public:
@@ -342,12 +346,15 @@ class lightList {
     _setupDefaultNames();
   };
 
-  /// Set the names of the light positions and colors to be used inside
+  /// Set the names of the light parameters to be used inside
   /// the shaders.
-  void setNames(const std::string &positionName, const std::string &colorName, const std::string &coeffName) {
+  void setNames(const std::string &positionName, const std::string &colorName, const std::string &ambientIName, const std::string &diffuseIName, const std::string &specularIName, const std::string &camFlagName) {
     _lightPositions.name = positionName;
     _lightColors.name = colorName;
-    _lightCoefficients.name = coeffName;
+    _lightAmbientIs.name = ambientIName;
+    _lightDiffuseIs.name = diffuseIName;
+    _lightSpecularIs.name = specularIName;
+    _lightCamFlags.name = camFlagName;
   };
     
   /// \brief Add lights to the list.
@@ -356,17 +363,19 @@ class lightList {
   /// lights is set, this is pretty much a one-way street.  Add
   /// lights, but don't subtract them.  If you want to extinguish one,
   /// just move it far away, or dial its intensity way down.
-  int addLight(const glm::vec4 &position, const glm::vec4 &color, const glm::vec4 &coeff) {
+  int addLight(const glm::vec4 &position, const glm::vec4 &color, const float &ambientI, const float &diffuseI, const float &specularI, const int &camMounted) {
     _lightPositions.addData(position);
     _lightColors.addData(color);
-    _lightCoefficients.addData(coeff);
+    _lightAmbientIs.addData(ambientI);
+    _lightDiffuseIs.addData(diffuseI);
+    _lightSpecularIs.addData(specularI);
+    _lightCamFlags.addData(camMounted);
     return _lightPositions.size();
   };
 
   int addLight(const glm::vec4 &position) {
     glm::vec4 white = glm::vec4(1.0f, 1.0f, 1.0f, 0.0f);
-    glm::vec4 simpleCoeff = glm::vec4(0.0f, 1.0f, 0.0f, 0.0f);
-    return addLight(position, white, simpleCoeff);
+    return addLight(position, white, 0.3f, 1.0f, 0.0f, false);
   };
   
   int getNumLights() { return _lightPositions.size(); };
@@ -384,21 +393,59 @@ class lightList {
   };
   GLuint getColorID() { return _lightColors.ID; };
 
+  std::vector<float> getAmbientIs() { return _lightAmbientIs.getData(); };
+  void setAmbientIs(const std::vector<float> &ambientIs) {
+    _lightAmbientIs.setData(ambientIs);
+  };
+  GLuint getAmbientIsID() { return _lightAmbientIs.ID; };
+
+  std::vector<float> getDiffuseIs() { return _lightDiffuseIs.getData(); };
+  void setDiffuseIs(const std::vector<float> &diffuseIs) {
+    _lightDiffuseIs.setData(diffuseIs);
+  };
+  GLuint getDiffuseIsID() { return _lightDiffuseIs.ID; };
+
+  std::vector<float> getSpecularIs() { return _lightSpecularIs.getData(); };
+  void setSpecularIs(const std::vector<float> &specularIs) {
+    _lightSpecularIs.setData(specularIs);
+  };
+  GLuint getSpecularIsID() { return _lightSpecularIs.ID; };
+
+  std::vector<int> getCamFlags() { return _lightCamFlags.getData(); };
+  void setCamFlags(const std::vector<int> &camFlags) {
+    _lightCamFlags.setData(camFlags);
+  };
+  GLuint getCamFlagsID() { return _lightCamFlags.ID; }
+
   /// ... and also for individual lights.
   void setPosition(const int &i, const glm::vec4 &position) {
     _lightPositions[i] = position;
   };
-  glm::vec4 getPosition(const int &i) { return _lightPositions[i]; };
+  glm::vec4 getPosition(const int &i) { return _lightPositions[i]; }
 
   /// \brief Change a light's color.
   void setColor(const int &i, const glm::vec4 &color) {
     _lightColors[i] = color; };
-  glm::vec4 getColor(const int &i) { return _lightColors[i]; };
+  glm::vec4 getColor(const int &i) { return _lightColors[i]; }
 
-  /// \brief Change a light's coefficients.
-  void setCoeff(const int &i, const glm::vec4 &coeff) {
-    _lightCoefficients.getData()[i] = coeff; }
-  glm::vec4 getCoeff(const int &i) { return _lightCoefficients.getData()[i]; }
+  /// \brief Change a lights ambient, diffuse and specular intensities.
+  void setAmbientI(const int &i, const float &ambientI) {
+    _lightAmbientIs.getData()[i] = ambientI; }
+  float getAmbientI(const int &i) { return _lightAmbientIs.getData()[i]; }
+
+  void setDiffuseI(const int &i, const float &diffuseI) {
+    _lightDiffuseIs.getData()[i] = diffuseI; }
+  float getDiffuseI(const int &i) { return _lightDiffuseIs.getData()[i]; }
+
+  void setSpecularI(const int &i, const float &specularI) {
+    _lightSpecularIs.getData()[i] = specularI; }
+  float getSpecularI(const int &i) { return _lightSpecularIs.getData()[i]; }
+
+  /// \brief Set if a light is placed relative to the camera position.
+  void setCamFlag(const int &i, const int &camMounted) {
+    _lightCamFlags.getData()[i] = camMounted; }
+  int getCamFlag(const int &i) { return _lightCamFlags.getData()[i]; }
+
 
   /// \brief Link the light data with whatever shader is in use.
   ///

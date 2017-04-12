@@ -49,11 +49,6 @@ private:
 
   std::string _vertexFile;
   std::string _fragmentFile;
-
-  bool _moving;
-  glm::mat4 _owm;
-  glm::mat4 _lastWandPos;
-
   
   // These functions from demo2.cpp are not needed here:
   //
@@ -133,7 +128,7 @@ private:
     // lighting, and the shapes don't have textures, this is irrelevant.
     _lights->addLight(glm::vec4(0.0f, 0.0f, -3.0f, 1.0f),
                       glm::vec4(1.0f, 1.0f, 1.0f, 0.0f),
-                      glm::vec4(0.3f, 1.0f, 1.0f, 0.0f));
+                      0.3, 1.0, 0.0, false);
 
     // Create a shader manager and load the light list.
     _shader->addLights(_lights);
@@ -214,8 +209,10 @@ public:
   /// The MinVR apparatus invokes this method whenever there is a new
   /// event to process.
   void onVREvent(const MinVR::VREvent &event) {
-        
-    // event.print();
+
+    if (event.getName() != "Wand0_Move" && event.getName() != "FrameStart") {
+        event.print();
+    }
         
     // This heartbeat event recurs at regular intervals, so you can do
     // animation with the model matrix here, as well as in the render
@@ -225,16 +222,6 @@ public:
     //   return;
                 // }
 
-      if (event.getName() == "Wand_Move"){
-            MinVR::VRMatrix4 wandPosition(event.getDataAsFloatArray("Transform"));
-            glm::mat4 wandPos = glm::make_mat4(wandPosition.getArray());
-            //printMat4(wandPos);
-            if(_moving){
-              _owm = wandPos / _lastWandPos * _owm;
-            }
-            _lastWandPos = wandPos;
-          }
-
     float step = 0.5f;
     float stepAngle = 5.0f / 360.0f;
 
@@ -242,21 +229,14 @@ public:
     if (event.getName() == "KbdEsc_Down") {
       shutdown();
     } else if ((event.getName().substr(0,3).compare("Kbd") == 0) &&
-               (event.getName().substr(4, std::string::npos).compare("_Down") == 0) &&
-               (event.getName() == "Wand_Down_Down")) {
+               (event.getName().substr(4, std::string::npos).compare("_Down") == 0)) {
       // Turn on and off the animation.
       if (_oscillationStep == 0.0f) {
         _oscillationStep = 0.03f;
       } else {
         _oscillationStep = 0.0f;
       }
-    } else if (event.getName() == "MouseBtnLeft_Down" || event.getName() == "Wand_Bottom_Trigger_Down"){
-        _moving = true;
-      }
-      else if (event.getName() == "MouseBtnLeft_Up" || event.getName() == "Wand_Bottom_Trigger_Up"){
-        _moving = false;
-      }
-
+    }
     // Print out where you are (where the camera is) and where you're
     // looking.
     // _showCameraPosition();
@@ -320,9 +300,6 @@ public:
                                         vm[4],  vm[5], vm[6], vm[7],
                                         vm[8],  vm[9],vm[10],vm[11],
                                         vm[12],vm[13],vm[14],vm[15]);
-
-      //in desktop mode, +x is away from camera, +z is right, +y is up
-      viewMatrix = _owm * viewMatrix;
 
       //bsg::bsgUtils::printMat("view", viewMatrix);
       _scene.draw(viewMatrix, projMatrix);
