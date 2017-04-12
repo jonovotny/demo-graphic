@@ -147,6 +147,16 @@ if(PNG_FOUND)
       ${GLEW_LIBRARY}
       )
 
+    add_executable(objViewer objViewer.cpp ${bsg_files})
+
+    target_link_libraries(objDemoMinVR
+      ${MINVR_LIBRARY}
+      ${PNG_LIBRARIES}
+      ${FREEGLUT_LIBRARY}
+      ${OPENGL_LIBRARY}
+      ${GLEW_LIBRARY}
+      )
+
   else(MINVR_FOUND)
 
     message("** No MinVR for you!")
