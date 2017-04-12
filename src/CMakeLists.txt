@@ -149,7 +149,7 @@ if(PNG_FOUND)
 
     add_executable(objViewer objViewer.cpp ${bsg_files})
 
-    target_link_libraries(objDemoMinVR
+    target_link_libraries(objViewer
       ${MINVR_LIBRARY}
       ${PNG_LIBRARIES}
       ${FREEGLUT_LIBRARY}
