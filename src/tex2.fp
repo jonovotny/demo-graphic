@@ -20,7 +20,7 @@ uniform vec4 lightColor[NUM_LIGHTS];
 uniform float lightAmbientI[NUM_LIGHTS];
 uniform float lightDiffuseI[NUM_LIGHTS];
 uniform float lightSpecularI[NUM_LIGHTS];
-uniform float camMounted[NUM_LIGHTS];
+uniform int camMounted[NUM_LIGHTS];
 
 // Material properties
 uniform vec3 colorAmbient;
@@ -117,7 +117,7 @@ void main() {
     // Specular : reflective highlight, like a mirror. Adjust the
     // exponent to adjust the size of the highlight.
     vec4 specular = lightColor[i] * pow(cosAlpha, matSpecularExp) * matColorSpecular;
-    float attenuation = 1.0 / (1.0 + 0.01 * pow(distanceToLight, 2));
+    float attenuation = 1.0;// / (1.0 + 0.01 * pow(distanceToLight, 2));
 
     outputColor += ambient + attenuation * (diffuse + lightSpecularI[i] * specular);
 

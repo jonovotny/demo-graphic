@@ -7,7 +7,8 @@
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtx/euler_angles.hpp"
 #include "glm/gtc/type_ptr.hpp"
-
+#include "glm/gtx/matrix_decompose.hpp"
+ 
 class DemoVRApp: public MinVR::VRApp {
 
   // Data values that were global in the demo2.cpp file are defined as
@@ -26,6 +27,18 @@ private:
   bsg::drawableCompound* _axesSet;
   bsg::drawableCollection* _modelGroup;
   bsg::drawableObjModel* _model;
+  bsg::drawableObjModel* _model2;
+  bsg::drawableObjModel* _wand;
+bsg::drawableCollection* _wandGroup;
+    bsg::drawableCompound* _laser;
+
+  //std::vector<bsg::drawableCollection*> _modelList;
+  //bsg::drawableCollection* _activeModel;
+  std::vector<bsg::drawableCompound*> _modelList;
+  bsg::drawableCompound* _activeModel;
+  int _activeID;
+
+  
 
   // These variables were not global before, but their scope has been
   // divided into several functions here, so they are class-wide
@@ -44,9 +57,24 @@ private:
   std::string _fragmentFile;
 
   bool _moving;
-  glm::mat4 _owm;
+  glm::mat4 _wandDrag;
   glm::mat4 _lastWandPos;
+  glm::vec3 _lastTranslation;
+  glm::quat _lastRotation;
+  float _scaleChange;
+  bool _showLaser;
+  bool _activeToggleVisibility;
 
+
+
+void printMat4(glm::mat4 m){
+  for(int i = 0; i < 4; i++){
+    for(int j = 0; j < 4; j++){
+      printf("%6.2f ", m[j][i]);
+    }
+    printf("\n");
+  }
+}
   
   // These functions from demo2.cpp are not needed here:
   //
@@ -86,7 +114,7 @@ private:
     }
 
     // This is the background color of the viewport.
-    glClearColor(0.1 , 0.0, 0.4, 1.0);
+    glClearColor(0.1 , 0.1, 0.1, 1.0);
 
     // Now we're ready to start issuing OpenGL calls.  Start by enabling
     // the modes we want.  The DEPTH_TEST is how you get hidden faces.
@@ -124,9 +152,9 @@ private:
 
     // Create a list of lights.  If the shader you're using doesn't use
     // lighting, and the shapes don't have textures, this is irrelevant.
-    _lights->addLight(glm::vec4(0.0f, 0.0f, -3.0f, 1.0f),
+    _lights->addLight(glm::vec4(0.0f, 0.0f, 0.0f, 1.0f),
                       glm::vec4(1.0f, 1.0f, 1.0f, 0.0f),
-                      0.3, 1.0, 0.0, false);
+                      0.5f, 0.8f, 0.0f, 0);
 
     // Create a shader manager and load the light list.
     _shader->addLights(_lights);
@@ -155,18 +183,72 @@ private:
     // shape, but we leave them separate so they can be moved
     // separately.
 
-    //_model = new bsg::drawableObjModel(_shader, "../data/test-v.obj");
-    //_model = new bsg::drawableObjModel(_shader, "../data/LEGO_Man.obj");
+    //_model = new bsg::drawableObjModel(_shader, "../data/test-v.obj", false);
     _model = new bsg::drawableObjModel(_shader, "../../demo-graphic/data/CasA_Supernova_Remnant.obj", false);
-    //_model = new bsg::drawableObjModel(_shader, "/Users/tomfool/tech/17/yurt/data/CasA_Supernova_Remnant-print_ready/CasA_Supernova_Remnant-print_ready/CasA_Supernova_Remnant.obj", false);
+    _model->setPosition(glm::vec3(-5.0f, 0.0f, -8.0f));
+    _model->setScale(glm::vec3(0.4f, 0.4f, 0.4f));
+
+    _model2 = new bsg::drawableObjModel(_shader, "../data/tubes.fluid.lw.obj", true);
+    //_model2 = new bsg::drawableObjModel(_shader, "../data/test-v.obj", false);
+    _model2->setPosition(glm::vec3(-5.0f, 0.0f, -10.0f));
+    _model2->setScale(glm::vec3(0.15f, 0.15f, 0.15f));
+
+/*
+    _model3 = new bsg::drawableObjModel(_shader, "../data/tubes.fluid.lw.obj", true);
+    //_model3 = new bsg::drawableObjModel(_shader, "../data/test-v.obj", false);
+    _model3->setPosition(glm::vec3(-5.0f, 0.0f, -10.0f));
+    _model3->setScale(glm::vec3(0.15f, 0.15f, 0.15f));
+
+    _model4 = new bsg::drawableObjModel(_shader, "../data/tubes.fluid.lw.obj", true);
+    //_model4 = new bsg::drawableObjModel(_shader, "../data/test-v.obj", false);
+    _model4->setPosition(glm::vec3(-5.0f, 0.0f, -10.0f));
+    _model4->setScale(glm::vec3(0.15f, 0.15f, 0.15f));
+
+    _model5 = new bsg::drawableObjModel(_shader, "../data/tubes.fluid.lw.obj", true);
+    //_model5 = new bsg::drawableObjModel(_shader, "../data/test-v.obj", false);
+    _model5->setPosition(glm::vec3(-5.0f, 0.0f, -10.0f));
+    _model5->setScale(glm::vec3(0.15f, 0.15f, 0.15f));
+
+    _model6 = new bsg::drawableObjModel(_shader, "../data/tubes.fluid.lw.obj", true);
+    //_model6 = new bsg::drawableObjModel(_shader, "../data/test-v.obj", false);
+    _model6->setPosition(glm::vec3(-5.0f, 0.0f, -10.0f));
+    _model6->setScale(glm::vec3(0.15f, 0.15f, 0.15f));
+*/
+
+
+    _wand = new bsg::drawableObjModel(_shader, "../data/pointer.obj", false);
+
+
+    _modelList.push_back(_model);
+    _modelList.push_back(_model2);
+/*    _modelList.push_back(_model3);
+    _modelList.push_back(_model4);
+    _modelList.push_back(_model5);
+    _modelList.push_back(_model6);*/
+
+    _activeModel = _modelList.front();
+    _activeID = 0;
+
+
+
+
 
     _modelGroup = new bsg::drawableCollection();
+    _wandGroup = new bsg::drawableCollection();
 
-    _modelGroup->addObject(_model);
+    /*for (std::vector<bsg::drawableCollection*>::iterator it = _modelList.begin(); it != _modelList.end(); ++it) {
+    	_modelGroup->addObject(*it);
+    }*/
 
-    _modelGroup->setPosition(glm::vec3(0.0f, 0.0f, -10.0f));
+    for (std::vector<bsg::drawableCompound*>::iterator it = _modelList.begin(); it != _modelList.end(); ++it) {
+    	_modelGroup->addObject(*it);
+    }
+    //_modelGroup->addObject(_model);
+    
     _scene.addObject(_modelGroup);
-
+    //_modelGroup->addObject(_model2);
+    
+    
     _axesShader->addLights(_lights);
     _axesShader->addShader(bsg::GLSHADER_VERTEX, "../src/shader2.vp");
     _axesShader->addShader(bsg::GLSHADER_FRAGMENT, "../src/shader.fp");
@@ -177,7 +259,18 @@ private:
     _axesSet = new bsg::drawableAxes(_axesShader, 100.0f);
 
     // Now add the axes.
-    _scene.addObject(_axesSet);
+    //_scene.addObject(_axesSet);
+
+    _laser = new bsg::drawableLine(_axesShader, 100.0f);
+    _laser->setVisible(false);
+    
+
+    _wandGroup->addObject(_wand);
+    _wandGroup->addObject(_laser);
+    _scene.addObject(_wandGroup);
+    _wand->setPosition(glm::vec3(0.0f, 0.0f, -0.3f));
+    _wand->setRotation(-1.5708f, 0.0f, 1.5708f);
+    _wand->setScale(0.1f);
 
     // All the shapes are now added to the scene.
   }
@@ -195,13 +288,17 @@ public:
     _shader = new bsg::shaderMgr();
     _axesShader = new bsg::shaderMgr();
     _lights = new bsg::lightList();
+    _moving = false;
+    _scaleChange = 0.0f;
+    _showLaser = false;
+    _activeToggleVisibility = false;
   }
 
   /// The MinVR apparatus invokes this method whenever there is a new
   /// event to process.
   void onVREvent(const MinVR::VREvent &event) {
 
-    if (event.getName() != "Wand0_Move" && event.getName() != "FrameStart") {
+    if ((event.getName() != "Wand0_Move" && event.getName() != "FrameStart") || (event.getName() == "Wand0_Move" && _moving)) {
         event.print();
     }
         
@@ -216,25 +313,61 @@ public:
       if (event.getName() == "Wand0_Move"){
             MinVR::VRMatrix4 wandPosition(event.getDataAsFloatArray("Transform"));
             glm::mat4 wandPos = glm::make_mat4(wandPosition.getArray());
-            //printMat4(wandPos);
+	    glm::vec3 scale;
+	    glm::quat rotation;
+	    glm::vec3 translation;
+	    glm::vec3 skew;
+	    glm::vec4 perspective;
+	    glm::decompose(wandPos, scale, rotation, translation, skew, perspective);
+
             if(_moving){
-              _owm = wandPos / _lastWandPos * _owm;
+	      glm::mat4 wandChange = wandPos/_lastWandPos;
+	      _wandDrag = wandChange * _wandDrag;
             }
+
+	    _lastRotation = rotation;
+            _lastTranslation = translation;
             _lastWandPos = wandPos;
           }
-
-    float step = 0.5f;
-    float stepAngle = 5.0f / 360.0f;
+	
 
     // Quit if the escape button is pressed
-    if (event.getName() == "KbdEsc_Down") {
+    if (event.getName() == "KbdEsc_Down" || event.getName() == "Wand_Select_Down") {
+std::cout << "Shutting Down" << std::endl;
       shutdown();
-    } else if (event.getName() == "MouseBtnLeft_Down" || event.getName() == "Wand_Bottom_Trigger_Down"){
+      
+    } else if (event.getName() == "MouseBtnLeft_Down" || event.getName() == "Wand_Bottom_Trigger_Down" || event.getName() == "Wand_Top_Trigger_Down"){
         _moving = true;
-      }
-      else if (event.getName() == "MouseBtnLeft_Up" || event.getName() == "Wand_Bottom_Trigger_Up"){
+      } else if (event.getName() == "MouseBtnLeft_Up" || event.getName() == "Wand_Bottom_Trigger_Up" || event.getName() == "Wand_Top_Trigger_Up"){
         _moving = false;
+      } else if (event.getName() == "Wand_Up_Down"){
+        _showLaser = true;
+      } else if (event.getName() == "Wand_Up_Up"){
+        _showLaser = false;
+      } else if (event.getName() == "Wand_Left_Down"){
+	_activeID--;
+        if (_activeID < 0) {
+		_activeID = _modelList.size()-1;
+	}
+        
+      } else if (event.getName() == "Wand_Right_Down"){
+        _activeID++;
+        if (_activeID >= _modelList.size()) {
+		_activeID = 0;
+	}
+        
+        
+      } else if (event.getName() == "Wand_Down_Down"){
+        _activeToggleVisibility = true;
+      } else if (event.getName() == "Wand_Joystick_Y_Change"){
+        if (abs(event.getDataAsFloat("AnalogValue")) > 0.05) {
+        	_scaleChange = -event.getDataAsFloat("AnalogValue") * 0.005;
+	} else {
+		_scaleChange = 0.0f;
+	}
       }
+
+      
 
     // Print out where you are (where the camera is) and where you're
     // looking.
@@ -271,6 +404,30 @@ public:
       // If you want to adjust the positions of the various objects in
       // your scene, you can do that here.
 
+//printMat4(_wandDrag);
+_activeModel = _modelList[_activeID];
+if (_activeToggleVisibility) {
+  _activeModel->setVisible(!_activeModel->getVisible());
+  _activeToggleVisibility = false;
+}
+
+_activeModel->setTransformMatrix(_wandDrag);
+if(_wandDrag != glm::mat4(1.0f)){
+printMat4(_activeModel->getModelMatrix());
+}
+//_wandDrag = glm::mat4(1.0f);
+
+_wandGroup->setPosition(_lastTranslation);
+_wandGroup->setOrientation(glm::inverse(_lastRotation));
+
+
+float newScale = _activeModel->getScale().x + _scaleChange;
+if (newScale > 0.01 && newScale < 5) {
+_activeModel->setScale(newScale); 
+}
+
+_laser->setVisible(_showLaser);
+
       // Now the preliminaries are done, on to the actual drawing.
   
       // First clear the display.
@@ -293,10 +450,17 @@ public:
                                         vm[12],vm[13],vm[14],vm[15]);
 
       //in desktop mode, +x is away from camera, +z is right, +y is up
-      viewMatrix = glm::transpose(_owm) * viewMatrix;
+      //viewMatrix = _owm * viewMatrix;
 
       //bsg::bsgUtils::printMat("view", viewMatrix);
+//	std::cout << "three" << std::endl;
       _scene.draw(viewMatrix, projMatrix);
+//std::cout << "four" << std::endl;
+
+if(_wandDrag != glm::mat4(1.0f)){
+printMat4(_activeModel->getModelMatrix());
+}
+_wandDrag = glm::mat4(1.0f);
 
       // We let MinVR swap the graphics buffers.
       // glutSwapBuffers();

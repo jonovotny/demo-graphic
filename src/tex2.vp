@@ -24,6 +24,7 @@ uniform mat4 viewMatrix;
 uniform mat4 modelMatrix;
 uniform mat4 normalMatrix;
 uniform vec4 lightPositionWS[NUM_LIGHTS];
+uniform int camMounted[NUM_LIGHTS];
 
 // The 'attributes' of a vertex shader are the inputs to the shader.
 // Each vertex of the object to be drawn has a set of attributes.
@@ -72,7 +73,11 @@ void main()
   // for this light source.
   vec4 lightPositionCS;
   for (int i = 0; i < NUM_LIGHTS; i++) {
-    lightPositionCS = viewMatrix * lightPositionWS[i];
+    //if (camMounted[i] == 0) {
+	//	lightPositionCS = viewMatrix * lightPositionWS[i];
+	//} else {
+    		lightPositionCS = vec4(0,0,0,1);
+	//}
     lightDirectionCS[i] = normalize(lightPositionCS + eyeDirectionCS);
   }
   

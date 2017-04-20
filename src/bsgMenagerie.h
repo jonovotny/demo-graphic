@@ -32,5 +32,15 @@ class drawableAxes : public drawableCompound {
  public:
    drawableAxes(bsgPtr<shaderMgr> pShader, const float length);
 };
+
+class drawableLine : public drawableCompound {
+
+ private:
+   float _length;
+   drawableObj _axes;
+
+ public:
+   drawableLine(bsgPtr<shaderMgr> pShader, const float length);
+};
  
 }

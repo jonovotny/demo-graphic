@@ -1011,7 +1011,7 @@ glm::mat4 drawableMulti::getModelMatrix() {
     glm::mat4 rotationMatrix = glm::mat4_cast(_orientation);
     glm::mat4 scaleMatrix = glm::scale(glm::mat4(1.0f), _scale);
 
-    _modelMatrix = translationMatrix * rotationMatrix * scaleMatrix;
+    _modelMatrix = _modelMatrix2 * translationMatrix * rotationMatrix * scaleMatrix;
     _modelMatrixNeedsReset = false;
 
     //    std::cout << glm::to_string(_modelMatrix) << std::endl;
@@ -1115,6 +1115,7 @@ void drawableCompound::load() {
 void drawableCompound::draw(const glm::mat4& viewMatrix,
                             const glm::mat4& projMatrix) {
 
+  if (_visible) {
   _pShader->useProgram();
   _pShader->draw();
   
@@ -1141,6 +1142,7 @@ void drawableCompound::draw(const glm::mat4& viewMatrix,
       _pShader->drawMaterial(it->getMaterial());
     it->draw();
   }  
+  }
 }
 
 void drawableCompound::addObjectBoundingBox(drawableObj &obj) {
@@ -1364,10 +1366,11 @@ void drawableCollection::draw(const glm::mat4 &viewMatrix,
                               const glm::mat4 &projMatrix) {
 
   // Then draw all the objects.
+  if (_visible){
   for (CollectionMap::iterator it =  _collection.begin();
        it != _collection.end(); it++) {
     it->second->draw(viewMatrix, projMatrix);
-  }
+  }}
 }
 
 

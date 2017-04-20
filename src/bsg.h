@@ -24,6 +24,9 @@
 #include <glm/gtc/quaternion.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <glm/gtx/string_cast.hpp>
+#include <glm/gtx/euler_angles.hpp>
+#include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
 
 // Some miscellaneous dependencies.
 #include <png.h>
@@ -905,15 +908,22 @@ class drawableMulti {
   /// recalculated.  The flag is set when the position, scale, or
   /// orientation are changed.
   glm::mat4 _modelMatrix;
+  glm::mat4 _modelMatrix2;
   bool _modelMatrixNeedsReset;
 
+  bool _visible;
+  bool _visibleBB;
+  
   void _init() {
     _position = glm::vec3(0.0f, 0.0f, 0.0f);
     _scale = glm::vec3(1.0f, 1.0f, 1.0f);
     // The glm::quat constructor initializes orientation to be zero
     // rotation by default, so need not be mentioned here.
     _modelMatrixNeedsReset = true;
+    _visible = true;
   };
+
+  
   
  public:
  drawableMulti() : _parent(0), _name("") { _init(); };
@@ -937,9 +947,16 @@ class drawableMulti {
     _position = position;
     _modelMatrixNeedsReset = true;
   };
+
+  void addPosition(glm::vec3 position) {
+    _position = position + _position;
+    _modelMatrixNeedsReset = true;
+  };
+
   /// \brief Set the model position using three floats.
   void setPosition(GLfloat x, GLfloat y, GLfloat z) {
     setPosition(glm::vec3(x, y, z));
+    _modelMatrixNeedsReset = true;
   };
   /// \brief Set the scale using a vector.
   void setScale(glm::vec3 scale) {
@@ -970,6 +987,41 @@ class drawableMulti {
   void setRotation(GLfloat pitch, GLfloat yaw, GLfloat roll) {
     _orientation = glm::quat(glm::vec3(pitch, yaw, roll));      
     _modelMatrixNeedsReset = true;
+  };
+
+  void addRotation(glm::quat orientation) {
+    _orientation = orientation * _orientation;      
+    _modelMatrixNeedsReset = true;
+  };
+
+  void setTransformMatrix(glm::mat4 mat) {
+/*	glm::vec3 scale;
+	glm::quat rotation;
+	glm::vec3 translation;
+	glm::vec3 skew;
+	glm::vec4 perspective;
+	glm::decompose(mat, scale, rotation, translation, skew, perspective);
+    _position = translation;
+    _scale = scale;
+    _orientation = rotation;   */ 
+    _modelMatrix2 = mat * _modelMatrix2;
+    _modelMatrixNeedsReset = true;
+  };
+
+  void setVisible(bool vis) {
+    _visible = vis;
+  };
+
+  void setVisibleBB(bool visBB) {
+    _visibleBB = visBB;
+  };
+
+  bool getVisible() {
+    return _visible;
+  };
+  
+  bool getVisibleBB() {
+    return _visibleBB;
   };
 
   /// \brief Returns the vector position.
