@@ -106,7 +106,7 @@ GLuint textureMgr::_loadCheckerBoard (int size, int numFields) {
   _height = size;
   int fieldWidth = size/numFields;
 
-  GLubyte image[size][size][3];
+  GLubyte image[64][64][3];
 
   // Create a checkerboard pattern
   for ( int i = 0; i < size; i++ ) {

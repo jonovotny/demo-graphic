@@ -4,6 +4,7 @@
 
 #include <api/MinVR.h>
 #include <math/VRMath.h>
+#include <main/VREventInternal.h>
 #include "glm/gtc/matrix_transform.hpp"
 #include "glm/gtx/euler_angles.hpp"
 #include "glm/gtc/type_ptr.hpp"
@@ -160,8 +161,8 @@ void printMat4(glm::mat4 m){
     _shader->addLights(_lights);
 
 
-    _vertexFile = "../src/tex2.vp";
-    _fragmentFile = "../src/tex2.fp";
+    _vertexFile = "D:\\workspace\\demo-graphic-experimental\\src\\tex2.vp";
+    _fragmentFile = "D:\\workspace\\demo-graphic-experimental\\src\\tex2.fp";
     
     // Add the shaders to the manager, first the vertex shader...
     _shader->addShader(bsg::GLSHADER_VERTEX, _vertexFile);
@@ -183,16 +184,17 @@ void printMat4(glm::mat4 m){
     // shape, but we leave them separate so they can be moved
     // separately.
 
-    //_model = new bsg::drawableObjModel(_shader, "../data/test-v.obj", false);
-    _model = new bsg::drawableObjModel(_shader, "../../demo-graphic/data/CasA_Supernova_Remnant.obj", false);
+    _model = new bsg::drawableObjModel(_shader, "D:\\workspace\\demo-graphic\\data\\test-v.obj", false);
+    //_model = new bsg::drawableObjModel(_shader, "../../demo-graphic/data/CasA_Supernova_Remnant.obj", false);
     _model->setPosition(glm::vec3(-5.0f, 0.0f, -8.0f));
     _model->setScale(glm::vec3(0.4f, 0.4f, 0.4f));
+	_model->setVisible(true);
 
-    _model2 = new bsg::drawableObjModel(_shader, "../data/tubes.fluid.lw.obj", true);
-    //_model2 = new bsg::drawableObjModel(_shader, "../data/test-v.obj", false);
+    //_model2 = new bsg::drawableObjModel(_shader, "../data/tubes.fluid.lw.obj", true);
+    _model2 = new bsg::drawableObjModel(_shader, "D:\\workspace\\demo-graphic\\data\\test-v.obj", false);
     _model2->setPosition(glm::vec3(-5.0f, 0.0f, -10.0f));
     _model2->setScale(glm::vec3(0.15f, 0.15f, 0.15f));
-
+	_model2->setVisible(true);
 /*
     _model3 = new bsg::drawableObjModel(_shader, "../data/tubes.fluid.lw.obj", true);
     //_model3 = new bsg::drawableObjModel(_shader, "../data/test-v.obj", false);
@@ -216,7 +218,7 @@ void printMat4(glm::mat4 m){
 */
 
 
-    _wand = new bsg::drawableObjModel(_shader, "../data/pointer.obj", false);
+    _wand = new bsg::drawableObjModel(_shader, "D:\\workspace\\demo-graphic-experimental\\data\\pointer.obj", false);
 
 
     _modelList.push_back(_model);
@@ -241,17 +243,18 @@ void printMat4(glm::mat4 m){
     }*/
 
     for (std::vector<bsg::drawableCompound*>::iterator it = _modelList.begin(); it != _modelList.end(); ++it) {
-    	_modelGroup->addObject(*it);
+    	_scene.addObject(*it);
     }
     //_modelGroup->addObject(_model);
-    
-    _scene.addObject(_modelGroup);
     //_modelGroup->addObject(_model2);
+	//_modelGroup->setVisible(true);
+    //_scene.addObject(_modelGroup);
+    //
     
     
     _axesShader->addLights(_lights);
-    _axesShader->addShader(bsg::GLSHADER_VERTEX, "../src/shader2.vp");
-    _axesShader->addShader(bsg::GLSHADER_FRAGMENT, "../src/shader.fp");
+    _axesShader->addShader(bsg::GLSHADER_VERTEX, "D:\\workspace\\demo-graphic-experimental\\src\\shader2.vp");
+    _axesShader->addShader(bsg::GLSHADER_FRAGMENT, "D:\\workspace\\demo-graphic-experimental\\src\\shader.fp");
     _axesShader->addTexture(texture);
 
     _axesShader->compileShaders();
@@ -259,7 +262,7 @@ void printMat4(glm::mat4 m){
     _axesSet = new bsg::drawableAxes(_axesShader, 100.0f);
 
     // Now add the axes.
-    //_scene.addObject(_axesSet);
+    _scene.addObject(_axesSet);
 
     _laser = new bsg::drawableLine(_axesShader, 100.0f);
     _laser->setVisible(false);
@@ -297,10 +300,75 @@ public:
   /// The MinVR apparatus invokes this method whenever there is a new
   /// event to process.
   void onVREvent(const MinVR::VREvent &event) {
+	  
 
-    if ((event.getName() != "Wand0_Move" && event.getName() != "FrameStart") || (event.getName() == "Wand0_Move" && _moving)) {
-        event.print();
+    if ((event.getName() != "Wand0_Move" && event.getName() != "FrameStart" && (event.getName().compare(0, 3, "HTC") != 0))|| (event.getName() == "Wand0_Move" && _moving)) {
+    //    event.print();
     }
+
+	if (event.getName().compare(0, 16, "HTC_Controller_1") == 0)
+	{
+		if (event.getInternal()->getDataIndex()->exists("/HTC_Controller_1/State/Axis1Button_Pressed") &&
+			(int)event.getInternal()->getDataIndex()->getValue("/HTC_Controller_1/State/Axis1Button_Pressed")) {
+			_moving = true;
+		//	std::cout << "move" << std::endl;
+		}
+		else
+		{
+		//	std::cout << "stop" << std::endl;
+			_moving = false;
+		}
+
+		if (event.getInternal()->getDataIndex()->exists("/HTC_Controller_1/Pose")) {
+			//std::cout << "huzzah - " << event.getName() << std::endl;
+			//event.print();
+			MinVR::VRMatrix4 wandPosition(event.getDataAsFloatArray("Pose"));
+			glm::mat4 wandPos = glm::make_mat4(wandPosition.getArray());
+
+			//printMat4(wandPos);
+
+		//}
+			glm::vec3 scale;
+			glm::quat rotation;
+			glm::vec3 translation;
+			glm::vec3 skew;
+			glm::vec4 perspective;
+			glm::decompose(wandPos, scale, rotation, translation, skew, perspective);
+
+			if (_moving) {
+				glm::mat4 wandChange = wandPos / _lastWandPos;
+				_wandDrag = wandChange * _wandDrag;
+			}
+
+			_lastRotation = rotation;
+			_lastTranslation = translation;
+			_lastWandPos = wandPos;
+		}
+	}
+		/*if (event.getInternal()->getDataIndex()->exists("/HTC_Controller_1/State/Axis0Button_Pressed") &&
+			(int)event.getInternal()->getDataIndex()->getValue("/HTC_Controller_1/State/Axis0Button_Pressed")) {
+			double x = event.getInternal()->getDataIndex()->getValue("/HTC_Controller_1/State/Axis0/XPos");
+			double y = event.getInternal()->getDataIndex()->getValue("/HTC_Controller_1/State/Axis0/YPos");
+
+			bool rotate = false;
+			if (fabs(x) > fabs(y)) rotate = true;
+
+			//if (!rotate)
+			//{
+				MinVR::VRVector3 offset = 0.05 * controllerpose * MinVR::VRVector3(0, 0, y);
+				MinVR::VRMatrix4 trans = MinVR::VRMatrix4::translation(offset);
+
+				roompose = trans * roompose;
+			//}
+			//else
+			//{
+				MinVR::VRMatrix4 rot = MinVR::VRMatrix4::rotationY(x / 10 / M_PI);
+				roompose = rot * roompose;
+			//}
+
+		}
+	}*/
+
         
     // This heartbeat event recurs at regular intervals, so you can do
     // animation with the model matrix here, as well as in the render

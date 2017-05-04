@@ -1,15 +1,18 @@
 #ifndef BSGHEADER
 #define BSGHEADER
 
-#include <sys/time.h>
+//#include <sys/time.h>
+#include "sys/time.h"
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdexcept>
 #include <memory.h>
+#define _USE_MATH_DEFINES
+#include <cmath>
 #include <math.h>
 #include <GL/glew.h>
-#include <GL/freeglut.h>
+//#include <GL/freeglut.h>
 #include <string>
 #include <vector>
 #include <list>
