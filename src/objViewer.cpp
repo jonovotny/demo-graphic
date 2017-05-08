@@ -66,7 +66,8 @@ bsg::drawableCollection* _wandGroup;
   bool _showLaser;
   bool _activeToggleVisibility;
 
-
+  glm::mat4 _lastWandMat;
+  glm::mat4 _lastViveWandMat;
 
 void printMat4(glm::mat4 m){
   for(int i = 0; i < 4; i++){
@@ -75,6 +76,18 @@ void printMat4(glm::mat4 m){
     }
     printf("\n");
   }
+}
+
+void printMat4line(glm::mat4 m) {
+	for (int i = 0; i < 4; i++) {
+		for (int j = 0; j < 4; j++) {
+			printf("%6.2f", m[j][i]);
+			if (i < 3 || j < 3) {
+				printf(",");
+			}
+		}		
+	}
+	printf("\n");
 }
   
   // These functions from demo2.cpp are not needed here:
@@ -220,6 +233,9 @@ void printMat4(glm::mat4 m){
 
     _wand = new bsg::drawableObjModel(_shader, "D:\\workspace\\demo-graphic-experimental\\data\\pointer.obj", false);
 
+	
+
+
 
     _modelList.push_back(_model);
     _modelList.push_back(_model2);
@@ -232,7 +248,13 @@ void printMat4(glm::mat4 m){
     _activeID = 0;
 
 
-
+	_modelList.push_back(new bsg::drawableObjModel(_shader, "D:\\workspace\\demo-graphic-experimental\\data\\vivecontroller\\body.obj", false));
+	_modelList.push_back(new bsg::drawableObjModel(_shader, "D:\\workspace\\demo-graphic-experimental\\data\\vivecontroller\\button.obj", false));
+	_modelList.push_back(new bsg::drawableObjModel(_shader, "D:\\workspace\\demo-graphic-experimental\\data\\vivecontroller\\l_grip.obj", false));
+	_modelList.push_back(new bsg::drawableObjModel(_shader, "D:\\workspace\\demo-graphic-experimental\\data\\vivecontroller\\r_grip.obj", false));
+	_modelList.push_back(new bsg::drawableObjModel(_shader, "D:\\workspace\\demo-graphic-experimental\\data\\vivecontroller\\sys_button.obj", false));
+	_modelList.push_back(new bsg::drawableObjModel(_shader, "D:\\workspace\\demo-graphic-experimental\\data\\vivecontroller\\trackpad.obj", false));
+	_modelList.push_back(new bsg::drawableObjModel(_shader, "D:\\workspace\\demo-graphic-experimental\\data\\vivecontroller\\trigger.obj", false));
 
 
     _modelGroup = new bsg::drawableCollection();
@@ -343,6 +365,7 @@ public:
 			_lastRotation = rotation;
 			_lastTranslation = translation;
 			_lastWandPos = wandPos;
+			_lastViveWandMat = wandPos;
 		}
 	}
 		/*if (event.getInternal()->getDataIndex()->exists("/HTC_Controller_1/State/Axis0Button_Pressed") &&
@@ -396,6 +419,7 @@ public:
 	    _lastRotation = rotation;
             _lastTranslation = translation;
             _lastWandPos = wandPos;
+			_lastWandMat = wandPos;
           }
 	
 
@@ -404,7 +428,12 @@ public:
 std::cout << "Shutting Down" << std::endl;
       shutdown();
       
-    } else if (event.getName() == "MouseBtnLeft_Down" || event.getName() == "Wand_Bottom_Trigger_Down" || event.getName() == "Wand_Top_Trigger_Down"){
+    } if (event.getName() == "Kbd1_Down") {
+		
+		printMat4line(_lastWandMat);
+		printMat4line(_lastViveWandMat);
+
+	} else if (event.getName() == "MouseBtnLeft_Down" || event.getName() == "Wand_Bottom_Trigger_Down" || event.getName() == "Wand_Top_Trigger_Down"){
         _moving = true;
       } else if (event.getName() == "MouseBtnLeft_Up" || event.getName() == "Wand_Bottom_Trigger_Up" || event.getName() == "Wand_Top_Trigger_Up"){
         _moving = false;
@@ -433,7 +462,9 @@ std::cout << "Shutting Down" << std::endl;
 	} else {
 		_scaleChange = 0.0f;
 	}
-      }
+	  }
+	  
+
 
       
 
